@@ -7,10 +7,14 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,
+    MessageEvent, TextMessage, TextSendMessage,ImageMessage, VideoMessage, AudioMessage
 )
 
 import oil_price
+import errno
+import os
+import sys
+import tempfile
 
 app = Flask(__name__)
 
@@ -21,6 +25,9 @@ handler = WebhookHandler('949751303901deead8ebda134e7f7c78')
 @app.route("/", methods=['GET'])
 def default_action():
     return 'Hello World'
+
+static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
+
 
 
 @app.route("/callback", methods=['POST'])
@@ -58,5 +65,34 @@ def handle_message(event):
             TextSendMessage(text=event.message.text + 'ค่ะ'))
 
 
+# Other Message Type
+@handler.add(MessageEvent, message=(ImageMessage, VideoMessage, AudioMessage))
+def handle_content_message(event):
+    if isinstance(event.message, ImageMessage):
+        ext = 'jpg'
+    elif isinstance(event.message, VideoMessage):
+        ext = 'mp4'
+    elif isinstance(event.message, AudioMessage):
+        ext = 'm4a'
+    else:
+        return
+
+    message_content = line_bot_api.get_message_content(event.message.id)
+    with tempfile.NamedTemporaryFile(dir=static_tmp_path, prefix=ext + '-', delete=False) as tf:
+        for chunk in message_content.iter_content():
+            tf.write(chunk)
+        tempfile_path = tf.name
+
+    dist_path = tempfile_path + '.' + ext
+    dist_name = os.path.basename(dist_path)
+    os.rename(tempfile_path, dist_path)
+
+    line_bot_api.reply_message(
+        event.reply_token, [
+            TextSendMessage(text='Save content.'),
+            TextSendMessage(text=request.host_url + os.path.join('static', 'tmp', dist_name))
+        ])
+
 if __name__ == "__main__":
     app.run()
+

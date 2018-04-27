@@ -37,10 +37,9 @@ class LicencePlate:
                     break
                 m = model[i]
                 top -= 1
-                if m['confidence'] > 40:
-                    # print('Model:',m['name'],m['confidence'])
-                    mdict = {'model':m['name'],'confidence':m['confidence']}
-                    models.append(mdict)
+                # print('Model:',m['name'],m['confidence'])
+                mdict = {'model':m['name'],'confidence':m['confidence']}
+                models.append(mdict)
             output['model'] = models
 
             color = v['color']
@@ -52,10 +51,9 @@ class LicencePlate:
                     break
                 c = color[i]
                 top -= 1
-                if c['confidence'] > 40:
-                    # print('Color:',c['name'],c['confidence'])        
-                    cdict = {'color':c['name'],'confidence':c['confidence']}
-                    colors.append(cdict)
+                # print('Color:',c['name'],c['confidence'])        
+                cdict = {'color':c['name'],'confidence':c['confidence']}
+                colors.append(cdict)
             output['color'] = colors
         return output
             
@@ -71,6 +69,7 @@ class LicencePlate:
         # obtain JSON result
         r = requests.post(url, files={'image': open(filename,'rb')})
         # process JSON result
+        print(r.json())
         result = self._process_json(r.json())
         return result
         # return r.json()
@@ -91,22 +90,23 @@ class LicencePlate:
             s += '\nรุ่นที่เป็นไปได้ คือ\n'
             for m in data['model']:
                 if m['confidence'] > 50:
-                    s += m['name'] + ' '
+                    s += m['model'] + '\n'
                 else:
-                    s += m['name'] + ' (ไม่มั่นใจ) '
+                    s += m['model'] + ' (ไม่มั่นใจ)\n'
         else:
             s += '\nรุ่น %s' % (data['model'][0]['model'])
 
-        # How many color
-        if len(data['color']) > 1:
-            s += '\nรุ่นที่เป็นไปได้ คือ\n'
-            for m in data['color']:
-                if m['confidence'] > 50:
-                    s += m['name'] + ' '
-                else:
-                    s += m['name'] + ' (ไม่มั่นใจ) '
-        else:
-            s += '\nสี %s' % (data['color'][0]['color'])
+        # How many colors
+        if len(data['color']) > 0:
+            if len(data['color']) > 1:
+                s += '\nสีที่เป็นไปได้ คือ\n'
+                for m in data['color']:
+                    if m['confidence'] > 50:
+                        s += m['color'] + '\n'
+                    else:
+                        s += m['color'] + ' (ไม่มั่นใจ)\n'
+            else:
+                s += '\nสี %s' % (data['color'][0]['color'])
 
         return s
 

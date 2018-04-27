@@ -10,6 +10,8 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,ImageMessage, VideoMessage, AudioMessage
 )
 
+from features.CarAnalytics import LicencePlate
+
 import oil_price
 import errno
 import os
@@ -87,10 +89,14 @@ def handle_content_message(event):
     dist_name = os.path.basename(dist_path)
     os.rename(tempfile_path, dist_path)
 
+    lp = LicencePlate()
+    result = lp.process(dist_path)
+    s = lp.translate(result)
+
     line_bot_api.reply_message(
         event.reply_token, [
-            TextSendMessage(text='Save content.'),
-            TextSendMessage(text=request.host_url + os.path.join('static', 'tmp', dist_name))
+            TextSendMessage(text=s),
+            #TextSendMessage(text=request.host_url + os.path.join('static', 'tmp', dist_name))
         ])
 
 if __name__ == "__main__":
